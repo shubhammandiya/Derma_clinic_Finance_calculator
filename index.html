@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clinic Money Machine - Visual Pipeline Calculator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f0fdf4 0%, #f8fafc 50%, #eff6ff 100%);
+      color: #1e293b;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .glass-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
+    }
+    input[type=range] {
+      accent-color: #0d9488;
+      cursor: pointer;
+      height: 6px;
+      border-radius: 999px;
+    }
+    .num-input {
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.5rem;
+      padding: 0.25rem 0.5rem;
+      text-align: right;
+      width: 115px;
+      color: #0f766e;
+      font-weight: 700;
+      transition: all 0.15s ease;
+    }
+    .num-input:focus {
+      outline: none;
+      border-color: #0d9488;
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+    }
+    .pipeline-connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #0d9488;
+      font-weight: 700;
+    }
+    .engine-box {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border: 2px solid #0d9488;
+      border-radius: 1.25rem;
+      box-shadow: 0 20px 30px -10px rgba(13, 148, 136, 0.12);
+    }
+  </style>
+</head>
+<body class="p-3 sm:p-6 md:p-8 max-w-7xl mx-auto">
+
+  <!-- WELCOME DIALOG MODAL -->
+  <div id="welcome_modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 md:p-8 shadow-2xl border border-slate-100 animate-fade-in">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="text-3xl">🏥</span>
+        <h2 class="text-xl md:text-2xl font-extrabold text-slate-800">Welcome to Your Clinic Money Machine!</h2>
+      </div>
+      
+      <div class="space-y-4 text-sm md:text-base text-slate-600 leading-relaxed">
+        <div class="bg-teal-50 border border-teal-200 p-3.5 rounded-xl">
+          <strong class="text-teal-900 block mb-1">🎛️ 1. How to Input Your Settings:</strong>
+          Use the sliders or type directly into the boxes. We’ve separated <strong>Daily Footfall</strong> (OPD & minor procedures) from <strong>Monthly Procedures</strong> (Lasers & Aesthetics, which start slower in the beginning).
+        </div>
+
+        <div class="bg-indigo-50 border border-indigo-200 p-3.5 rounded-xl">
+          <strong class="text-indigo-900 block mb-1">🏗️ 2. How One-Time Cost & Loan Work:</strong>
+          We combine all your one-time setup costs (Interiors, Furniture, AC, OT, and Lasers). You simply enter how much <strong>Upfront Cash (Down Payment)</strong> you have in hand. 
+          <br><br>
+          Any remaining amount is automatically converted into a <strong>Clinic Loan</strong>, and its <strong>Monthly EMI</strong> is piped directly into your clinic’s monthly bills!
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl">
+          <strong class="text-amber-900 block mb-1">⏱️ 3. How Recovery Time is Calculated:</strong>
+          Once your clinic pays all monthly bills (including Loan EMI and each Doctor's Monthly Income), the leftover profit goes toward paying you back for the initial <strong>Upfront Cash</strong> you put in!
+        </div>
+      </div>
+
+      <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200">
+        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+          <input type="checkbox" id="never_show_chk" class="w-4 h-4 accent-teal-600 rounded">
+          <span>Never show this again</span>
+        </label>
+        <button onclick="closeModal()" class="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-md transition">
+          Got It, Let's Build! 🚀
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <div class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
+    <div>
+      <span class="inline-block bg-teal-100 text-teal-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-1">Interactive Financial Pipeline</span>
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900">✨ Dermatology & Aesthetics Clinic Simulator</h1>
+      <p class="text-slate-500 text-sm">Tweak any slider to see how money flows through your clinic engine in real time.</p>
+    </div>
+    <button onclick="openModalForce()" class="text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-3.5 py-2 rounded-lg transition self-start md:self-auto">
+      ❓ How This Pipeline Works
+    </button>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- TOP SECTION: THE 3 INPUT PIPELINES FEEDING THE ENGINE                 -->
+  <!-- ===================================================================== -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4">
+
+    <!-- INPUT BOX 1: MONEY COMING IN (DAILY + MONTHLY REVENUE) -->
+    <div class="glass-card p-5 border-t-4 border-t-emerald-500">
+      <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+        <div>
+          <span class="text-xs font-bold uppercase text-emerald-600 tracking-wider">Pipeline Step 1</span>
+          <h2 class="text-lg font-extrabold text-slate-800">📥 Footfall & Procedures (Inflow)</h2>
+        </div>
+        <span class="text-2xl">💵</span>
+      </div>
+
+      <div class="space-y-3.5 text-xs sm:text-sm">
+        <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
+          <div class="flex justify-between items-center mb-1">
+            <label class="font-semibold text-slate-700">Working Days / Month</label>
+            <input type="number" id="days_num" value="26" min="1" max="31" class="num-input" oninput="sync('days', this.value)">
+          </div>
+          <input type="range" id="days_slider" value="26" min="15" max="30" class="w-full" oninput="sync('days', this.value)">
+        </div>
+
+        <!-- Daily OPD -->
+        <div class="pt-1">
+          <div class="font-bold text-teal-700 mb-1.5 flex items-center justify-between">
+            <span>1. OPD Consultations</span>
+            <span class="text-[11px] bg-teal-50 text-teal-700 px-2 py-0.5 rounded font-semibold">PER DAY</span>
+          </div>
+          <div class="space-y-2">
+            <div>
+              <div class="flex justify-between mb-1"><label>Paid OPD Patients / Day</label><input type="number" id="opd_vol_num" value="15" class="num-input" oninput="sync('opd_vol', this.value)"></div>
+              <input type="range" id="opd_vol_slider" value="15" min="0" max="80" class="w-full" oninput="sync('opd_vol', this.value)">
+            </div>
+            <div>
+              <div class="flex justify-between mb-1"><label>Avg OPD Fee (₹)</label><input type="number" id="opd_fee_num" value="600" step="50" class="num-input" oninput="sync('opd_fee', this.value)"></div>
+              <input type="range" id="opd_fee_slider" value="600" min="200" max="2000" step="50" class="w-full" oninput="sync('opd_fee', this.value)">
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-slate-100">
+
+        <!-- Daily Medical / Dermatosurgery -->
+        <div>
+          <div class="font-bold text-teal-700 mb-1.5 flex items-center justify-between">
+            <span>2. Medical & Dermatosurgery</span>
+            <span class="text-[11px] bg-teal-50 text-teal-700 px-2 py-0.5 rounded font-semibold">PER DAY</span>
+          </div>
+          <div class="space-y-2">
+            <div>
+              <div class="flex justify-between mb-1"><label>Procedures / Day</label><input type="number" id="med_vol_num" value="2" step="0.5" class="num-input" oninput="sync('med_vol', this.value)"></div>
+              <input type="range" id="med_vol_slider" value="2" min="0" max="20" step="0.5" class="w-full" oninput="sync('med_vol', this.value)">
+            </div>
+            <div>
+              <div class="flex justify-between mb-1"><label>Avg Charge (₹)</label><input type="number" id="med_fee_num" value="2500" step="250" class="num-input" oninput="sync('med_fee', this.value)"></div>
+              <input type="range" id="med_fee_slider" value="2500" min="500" max="15000" step="250" class="w-full" oninput="sync('med_fee', this.value)">
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-slate-100">
+
+        <!-- Monthly Aesthetics -->
+        <div>
+          <div class="font-bold text-indigo-700 mb-1.5 flex items-center justify-between">
+            <span>3. Aesthetics (Botox, Fillers, Peels)</span>
+            <span class="text-[11px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-semibold">PER MONTH</span>
+          </div>
+          <div class="space-y-2">
+            <div>
+              <div class="flex justify-between mb-1"><label>Procedures / Month</label><input type="number" id="aes_vol_num" value="35" step="1" class="num-input" oninput="sync('aes_vol', this.value)"></div>
+              <input type="range" id="aes_vol_slider" value="35" min="0" max="300" step="1" class="w-full" oninput="sync('aes_vol', this.value)">
+            </div>
+            <div>
+              <div class="flex justify-between mb-1"><label>Avg Ticket Size (₹)</label><input type="number" id="aes_fee_num" value="6000" step="500" class="num-input" oninput="sync('aes_fee', this.value)"></div>
+              <input type="range" id="aes_fee_slider" value="6000" min="1000" max="35000" step="500" class="w-full" oninput="sync('aes_fee', this.value)">
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-slate-100">
+
+        <!-- Monthly Lasers -->
+        <div>
+          <div class="font-bold text-indigo-700 mb-1.5 flex items-center justify-between">
+            <span>4. Lasers (LHR, Toning, CO2)</span>
+            <span class="text-[11px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-semibold">PER MONTH</span>
+          </div>
+          <div class="space-y-2">
+            <div>
+              <div class="flex justify-between mb-1"><label>Laser Sessions / Month</label><input type="number" id="las_vol_num" value="45" step="1" class="num-input" oninput="sync('las_vol', this.value)"></div>
+              <input type="range" id="las_vol_slider" value="45" min="0" max="400" step="1" class="w-full" oninput="sync('las_vol', this.value)">
+            </div>
+            <div>
+              <div class="flex justify-between mb-1"><label>Avg Session Fee (₹)</label><input type="number" id="las_fee_num" value="4500" step="250" class="num-input" oninput="sync('las_fee', this.value)"></div>
+              <input type="range" id="las_fee_slider" value="4500" min="1000" max="20000" step="250" class="w-full" oninput="sync('las_fee', this.value)">
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-slate-100">
+
+        <!-- Pharmacy & Consumables -->
+        <div>
+          <div class="font-bold text-teal-700 mb-1.5">5. Pharmacy & Consumables</div>
+          <div class="space-y-2">
+            <div>
+              <div class="flex justify-between mb-1"><label>Daily Pharmacy Sales (₹)</label><input type="number" id="pharm_sales_num" value="12000" step="1000" class="num-input" oninput="sync('pharm_sales', this.value)"></div>
+              <input type="range" id="pharm_sales_slider" value="12000" min="0" max="100000" step="1000" class="w-full" oninput="sync('pharm_sales', this.value)">
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                <label class="text-[11px] text-slate-500 block">Pharmacy Margin (%)</label>
+                <input type="number" id="pharm_margin_num" value="28" min="5" max="60" class="num-input w-full mt-1" oninput="calculate()">
+              </div>
+              <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                <label class="text-[11px] text-slate-500 block">Consumables (% of Proc)</label>
+                <input type="number" id="consumables_pct_num" value="18" min="5" max="50" class="num-input w-full mt-1" oninput="calculate()">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INPUT BOX 2: RECURRING MONTHLY CLINIC EXPENSES & DOCTORS' PAY -->
+    <div class="glass-card p-5 border-t-4 border-t-rose-500 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+          <div>
+            <span class="text-xs font-bold uppercase text-rose-600 tracking-wider">Pipeline Step 2</span>
+            <h2 class="text-lg font-extrabold text-slate-800">📤 Monthly Fixed Costs & Docs</h2>
+          </div>
+          <span class="text-2xl">🧾</span>
+        </div>
+
+        <div class="space-y-4 text-xs sm:text-sm">
+          <div>
+            <div class="flex justify-between mb-1"><label class="font-medium">Rent & Maintenance (₹/mo)</label><input type="number" id="rent_num" value="85000" step="5000" class="num-input" oninput="sync('rent', this.value)"></div>
+            <input type="range" id="rent_slider" value="85000" min="20000" max="300000" step="5000" class="w-full" oninput="sync('rent', this.value)">
+          </div>
+
+          <div>
+            <div class="flex justify-between mb-1"><label class="font-medium">Staff Salaries (OT, Therapists, Reception)</label><input type="number" id="staff_num" value="85000" step="5000" class="num-input" oninput="sync('staff', this.value)"></div>
+            <input type="range" id="staff_slider" value="85000" min="15000" max="300000" step="5000" class="w-full" oninput="sync('staff', this.value)">
+          </div>
+
+          <div>
+            <div class="flex justify-between mb-1"><label class="font-medium">Electricity, Software & Misc (₹/mo)</label><input type="number" id="utilities_num" value="25000" step="2500" class="num-input" oninput="sync('utilities', this.value)"></div>
+            <input type="range" id="utilities_slider" value="25000" min="5000" max="100000" step="2500" class="w-full" oninput="sync('utilities', this.value)">
+          </div>
+
+          <div>
+            <div class="flex justify-between mb-1"><label class="font-medium">Marketing & Ads (Instagram/Google)</label><input type="number" id="marketing_num" value="40000" step="5000" class="num-input" oninput="sync('marketing', this.value)"></div>
+            <input type="range" id="marketing_slider" value="40000" min="0" max="200000" step="5000" class="w-full" oninput="sync('marketing', this.value)">
+          </div>
+
+          <hr class="border-slate-200">
+
+          <!-- UPDATED: NUMBER OF DOCTORS + PER DOCTOR MONTHLY INCOME -->
+          <div class="bg-amber-50/80 border border-amber-200 p-3.5 rounded-xl space-y-3">
+            <div class="font-extrabold text-amber-900 flex items-center justify-between">
+              <span>👨‍⚕️👩‍⚕️ Doctors' Monthly Income Target</span>
+            </div>
+
+            <div>
+              <div class="flex justify-between mb-1">
+                <label class="font-semibold text-amber-900">Number of Doctors</label>
+                <input type="number" id="num_docs_num" value="2" min="1" max="10" step="1" class="num-input" oninput="sync('num_docs', this.value)">
+              </div>
+              <input type="range" id="num_docs_slider" value="2" min="1" max="6" step="1" class="w-full" oninput="sync('num_docs', this.value)">
+            </div>
+
+            <div>
+              <div class="flex justify-between mb-1">
+                <label class="font-semibold text-amber-900">Per Doctor Monthly Income (₹/mo)</label>
+                <input type="number" id="per_doc_pay_num" value="150000" step="10000" class="num-input" oninput="sync('per_doc_pay', this.value)">
+              </div>
+              <input type="range" id="per_doc_pay_slider" value="150000" min="0" max="500000" step="10000" class="w-full" oninput="sync('per_doc_pay', this.value)">
+            </div>
+
+            <div class="flex justify-between text-xs font-bold text-amber-900 pt-2 border-t border-amber-200">
+              <span>Total Doctors' Income Needed:</span>
+              <span id="out_total_docs_pay" class="text-sm">₹3,00,000 / mo</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 bg-rose-50 border border-rose-200 p-3 rounded-xl text-xs text-rose-900">
+        💡 <strong>Note:</strong> The Clinic Equipment & Setup Loan EMI from <strong>Step 3 (Right Box)</strong> automatically flows into your Monthly Clinic Engine below!
+      </div>
+    </div>
+
+    <!-- INPUT BOX 3: ONE-TIME SETUP, EQUIPMENT & OVERALL CLINIC LOAN GENERATOR -->
+    <div class="glass-card p-5 border-t-4 border-t-indigo-500 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+          <div>
+            <span class="text-xs font-bold uppercase text-indigo-600 tracking-wider">Pipeline Step 3</span>
+            <h2 class="text-lg font-extrabold text-slate-800">🏗️ Setup, Equipment & Clinic Loan</h2>
+          </div>
+          <span class="text-2xl">🏦</span>
+        </div>
+
+        <div class="space-y-3.5 text-xs sm:text-sm">
+          <div class="font-bold text-indigo-800">A. All One-Time Clinic Setup & Equipment</div>
+
+          <div>
+            <div class="flex justify-between mb-1"><label>Interiors, Partitions, Doors & Decor (₹)</label><input type="number" id="interiors_num" value="600000" step="25000" class="num-input" oninput="sync('interiors', this.value)"></div>
+            <input type="range" id="interiors_slider" value="600000" min="50000" max="3000000" step="25000" class="w-full" oninput="sync('interiors', this.value)">
+          </div>
+
+          <div>
+            <div class="flex justify-between mb-1"><label>Tables, Chairs, ACs, Fridge, Signage (₹)</label><input type="number" id="furniture_num" value="300000" step="25000" class="num-input" oninput="sync('furniture', this.value)"></div>
+            <input type="range" id="furniture_slider" value="300000" min="50000" max="1500000" step="25000" class="w-full" oninput="sync('furniture', this.value)">
+          </div>
+
+          <div>
+            <div class="flex justify-between mb-1"><label>OT Chair, Exam Table, Autoclave, Lights (₹)</label><input type="number" id="ot_setup_num" value="200000" step="20000" class="num-input" oninput="sync('ot_setup', this.value)"></div>
+            <input type="range" id="ot_setup_slider" value="200000" min="50000" max="1000000" step="20000" class="w-full" oninput="sync('ot_setup', this.value)">
+          </div>
+
+          <div>
+            <div class="flex justify-between mb-1"><label class="font-semibold text-indigo-900">Heavy Equipment & Lasers Total (₹)</label><input type="number" id="equip_cost_num" value="2800000" step="100000" class="num-input" oninput="sync('equip_cost', this.value)"></div>
+            <input type="range" id="equip_cost_slider" value="2800000" min="200000" max="10000000" step="100000" class="w-full" oninput="sync('equip_cost', this.value)">
+          </div>
+
+          <div class="bg-slate-100 p-2.5 rounded-lg flex justify-between items-center font-bold text-slate-800">
+            <span>Total Capital Required (Setup + Equip):</span>
+            <span id="cap_total_needed" class="text-indigo-700 text-base">₹39,00,000</span>
+          </div>
+
+          <hr class="border-slate-200">
+
+          <div class="font-bold text-teal-800">B. Subtract Your Upfront Cash (Down Payment)</div>
+          <div>
+            <div class="flex justify-between mb-1">
+              <label class="font-semibold">Total Upfront Cash Put In by You (₹)</label>
+              <input type="number" id="upfront_cash_num" value="1700000" step="50000" class="num-input" oninput="sync('upfront_cash', this.value)">
+            </div>
+            <input type="range" id="upfront_cash_slider" value="1700000" min="0" max="6000000" step="50000" class="w-full" oninput="sync('upfront_cash', this.value)">
+            <span class="text-[11px] text-slate-500 block mt-0.5">Pays for interiors + equipment down payment. Excess becomes the Clinic Loan.</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+              <label class="text-[11px] text-slate-500 block">Loan Interest (% p.a.)</label>
+              <input type="number" id="loan_rate_num" value="10.5" step="0.5" class="num-input w-full mt-1" oninput="calculate()">
+            </div>
+            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+              <label class="text-[11px] text-slate-500 block">Loan Tenure (Months)</label>
+              <input type="number" id="loan_tenure_num" value="48" step="6" class="num-input w-full mt-1" oninput="calculate()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loan Funnel Output Box -->
+      <div class="mt-4 bg-indigo-50 border-2 border-indigo-300 p-3.5 rounded-xl space-y-1.5">
+        <div class="text-[11px] font-extrabold uppercase text-indigo-600 tracking-wider">⚡ Overall Clinic Loan Funnel</div>
+        <div class="flex justify-between text-xs text-slate-700">
+          <span>Excess Converted to Clinic Loan:</span>
+          <span id="out_loan_principal" class="font-extrabold text-indigo-900">₹22,00,000</span>
+        </div>
+        <div class="flex justify-between text-sm font-extrabold text-indigo-700 pt-1 border-t border-indigo-200">
+          <span>Monthly EMI (Funnels to Engine ⬇️):</span>
+          <span id="out_loan_emi">₹56,328 / mo</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- VISUAL PIPELINE ARROWS CONVERGING INTO THE ENGINE -->
+  <div class="py-2 text-center">
+    <div class="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-6 bg-white px-5 py-2 rounded-full shadow-sm border border-slate-200 text-xs sm:text-sm font-bold text-teal-800">
+      <span>📥 Inflow Feeds Engine ⬇️</span>
+      <span class="text-slate-300">|</span>
+      <span>📤 Fixed Costs + Docs' Pay ⬇️</span>
+      <span class="text-slate-300">|</span>
+      <span class="text-indigo-700">🏦 Clinic Loan EMI <span id="pipe_emi_badge">(₹56,328/mo)</span> ⬅️</span>
+    </div>
+    <div class="text-2xl text-teal-600 font-black mt-1">▼</div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MIDDLE SECTION: THE CENTRAL CLINIC ENGINE (MONTHLY BOX)               -->
+  <!-- ===================================================================== -->
+  <div class="engine-box p-5 sm:p-7 max-w-4xl mx-auto mb-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-teal-100 pb-4 mb-5">
+      <div>
+        <span class="text-xs font-extrabold uppercase tracking-widest text-teal-600">Central Processing Unit</span>
+        <h2 class="text-xl sm:text-2xl font-black text-slate-900">⚙️ THE CLINIC ENGINE (MONTHLY BOX)</h2>
+      </div>
+      <div class="text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200 px-3 py-1.5 rounded-lg">
+        Break-Even OPD Footfall: <span id="be_opd" class="text-sm font-black text-teal-950">-- patients/day</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Step 1 inside Engine: Gross to Net Revenue -->
+      <div class="bg-emerald-50/60 border border-emerald-200 rounded-xl p-4 space-y-2.5">
+        <div class="font-extrabold text-emerald-950 text-sm sm:text-base">1. Gross Monthly Revenue</div>
+        <div class="flex justify-between text-xs sm:text-sm text-slate-600">
+          <span>OPD + Medical + Aesthetics + Lasers + Pharmacy:</span>
+          <span id="eng_gross_rev" class="font-bold text-slate-900">₹0</span>
+        </div>
+        <div class="flex justify-between text-xs sm:text-sm text-rose-600">
+          <span>(-) Consumables & Pharmacy Stock Cost:</span>
+          <span id="eng_consumables" class="font-bold">- ₹0</span>
+        </div>
+        <div class="border-t border-emerald-300 pt-2 flex justify-between items-baseline">
+          <span class="font-extrabold text-emerald-900 text-sm">2. Net Revenue (Available for Survival):</span>
+          <span id="eng_net_rev" class="text-lg sm:text-xl font-black text-emerald-700">₹0</span>
+        </div>
+      </div>
+
+      <!-- Step 2 inside Engine: Deducting Monthly Survival Costs -->
+      <div class="bg-rose-50/60 border border-rose-200 rounded-xl p-4 space-y-2">
+        <div class="font-extrabold text-rose-950 text-sm sm:text-base">3. Minus Monthly Survival Liabilities</div>
+        <div class="flex justify-between text-xs sm:text-sm text-slate-700">
+          <span>(-) Fixed Overheads (Rent, Staff, Utilities, Ads):</span>
+          <span id="eng_fixed" class="font-bold text-rose-700">- ₹0</span>
+        </div>
+        <div class="flex justify-between text-xs sm:text-sm text-indigo-800 bg-indigo-100/70 px-2 py-1 rounded font-semibold">
+          <span>(-) Overall Clinic Loan EMI (Funneled from Step 3):</span>
+          <span id="eng_emi" class="font-extrabold">- ₹0</span>
+        </div>
+        <div class="flex justify-between text-xs sm:text-sm text-amber-900">
+          <span>(-) All Doctors' Combined Monthly Income:</span>
+          <span id="eng_docs" class="font-bold text-rose-700">- ₹0</span>
+        </div>
+        <div class="border-t border-rose-300 pt-2 flex justify-between items-baseline">
+          <span class="font-extrabold text-rose-900 text-sm">Total Monthly Survival Cost:</span>
+          <span id="eng_total_cost" class="text-lg sm:text-xl font-black text-rose-700">₹0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARROW DOWN TO SURPLUS / DEFICIT -->
+  <div class="pipeline-connector my-2">
+    <span class="text-xs uppercase tracking-wider bg-slate-200 text-slate-700 px-3 py-0.5 rounded-full">Spits Out Profit / Loss</span>
+    <span class="text-2xl leading-none mt-1">▼</span>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- BOTTOM SECTION 1: GREEN SMILEY SUCCESS BOX OR RED ALERT BOX           -->
+  <!-- ===================================================================== -->
+  <div id="verdict_box" class="max-w-3xl mx-auto rounded-2xl p-6 text-center transition-all duration-300 shadow-lg mb-4 border-2">
+    <div id="verdict_icon" class="text-4xl sm:text-5xl mb-2">😊</div>
+    <div class="text-xs font-extrabold uppercase tracking-widest opacity-80">Net Monthly Surplus / Deficit (After Doctors' Income & EMI)</div>
+    <div id="verdict_amount" class="text-3xl sm:text-4xl font-black my-1">₹0 / month</div>
+    <div id="verdict_title" class="text-base sm:text-lg font-extrabold mt-1">✅ YES! Clinic is Monthly Self-Sustaining & Profitable!</div>
+    <p id="verdict_sub" class="text-xs sm:text-sm mt-1 opacity-90"></p>
+  </div>
+
+  <!-- ARROW DOWN TO RECOVERY TANK -->
+  <div class="pipeline-connector my-2">
+    <span class="text-xs uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 px-3 py-0.5 rounded-full">Funnels Into One-Time Cash Recovery Tank</span>
+    <span class="text-2xl leading-none mt-1 text-amber-600">▼</span>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- BOTTOM SECTION 2: MONTHS TO RECOVER UPFRONT OUT-OF-POCKET CASH        -->
+  <!-- ===================================================================== -->
+  <div class="glass-card p-6 max-w-3xl mx-auto border-2 border-amber-400 bg-gradient-to-r from-amber-50 via-white to-amber-50">
+    <div class="text-center">
+      <span class="text-xs font-extrabold uppercase tracking-widest text-amber-700">Final Output • Payback Calculator</span>
+      <h3 class="text-lg sm:text-xl font-black text-slate-900 mt-0.5">⏱️ MONTHS TO RECOVER YOUR UPFRONT CASH</h3>
+      <p class="text-xs text-slate-500 mt-1">
+        Formula: <strong>(Total One-Time Out-of-Pocket Cash Put In)</strong> ÷ <strong>(Net Monthly Surplus)</strong>
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5 items-center text-center">
+      <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-xs text-slate-500 font-semibold">Upfront Cash You Put In</div>
+        <div id="rec_cash" class="text-lg sm:text-xl font-black text-slate-800 mt-0.5">₹17,00,000</div>
+      </div>
+
+      <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-xs text-slate-500 font-semibold">Net Monthly Surplus</div>
+        <div id="rec_surplus" class="text-lg sm:text-xl font-black text-emerald-600 mt-0.5">₹0 / mo</div>
+      </div>
+
+      <div class="bg-amber-500 text-white p-4 rounded-xl shadow-md">
+        <div class="text-xs uppercase font-bold tracking-wider opacity-90">Time to Recover</div>
+        <div id="rec_months" class="text-2xl sm:text-3xl font-black mt-0.5">0 Months</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center text-xs text-slate-400 mt-8 pb-6">
+    Designed for Dermatology & Aesthetics Clinic Financial Planning • Works Offline on Mobile & Laptop
+  </div>
+
+  <!-- JAVASCRIPT ENGINE -->
+  <script>
+    function formatINR(num) {
+      const sign = num < 0 ? '- ' : '';
+      return sign + '₹' + Math.round(Math.abs(num)).toLocaleString('en-IN');
+    }
+
+    function sync(id, val) {
+      document.getElementById(id + '_num').value = val;
+      document.getElementById(id + '_slider').value = val;
+      calculate();
+    }
+
+    function getVal(id) {
+      return parseFloat(document.getElementById(id + '_num').value) || 0;
+    }
+
+    // Modal Handling
+    function checkModalOnLoad() {
+      const hideModal = localStorage.getItem('clinic_hide_welcome_v2');
+      if (!hideModal) {
+        document.getElementById('welcome_modal').classList.remove('hidden');
+      }
+    }
+
+    function closeModal() {
+      const chk = document.getElementById('never_show_chk').checked;
+      if (chk) {
+        localStorage.setItem('clinic_hide_welcome_v2', 'true');
+      }
+      document.getElementById('welcome_modal').classList.add('hidden');
+    }
+
+    function openModalForce() {
+      document.getElementById('welcome_modal').classList.remove('hidden');
+    }
+
+    function calculate() {
+      const days = getVal('days');
+
+      // 1. REVENUE INFLOW
+      // Daily inputs multiplied by working days
+      const opdRev = getVal('opd_vol') * getVal('opd_fee') * days;
+      const medRev = getVal('med_vol') * getVal('med_fee') * days;
+
+      // Monthly inputs (Aesthetics & Lasers are now direct per-month counts)
+      const aesRev = getVal('aes_vol') * getVal('aes_fee');
+      const lasRev = getVal('las_vol') * getVal('las_fee');
+
+      const totalProcRev = medRev + aesRev + lasRev;
+
+      // Pharmacy & Consumables
+      const pharmGross = getVal('pharm_sales') * days;
+      const pharmMarginPct = (parseFloat(document.getElementById('pharm_margin_num').value) || 0) / 100;
+      const pharmNet = pharmGross * pharmMarginPct;
+      const pharmStockCost = pharmGross - pharmNet;
+
+      const consumablesPct = (parseFloat(document.getElementById('consumables_pct_num').value) || 0) / 100;
+      const consumablesCost = totalProcRev * consumablesPct;
+
+      const grossMonthlyRev = opdRev + totalProcRev + pharmGross;
+      const totalCOGS = consumablesCost + pharmStockCost;
+      const netRevenueAvailable = grossMonthlyRev - totalCOGS;
+
+      // 2. ONE-TIME SETUP + EQUIPMENT & OVERALL CLINIC LOAN
+      const totalCapexNeeded = getVal('interiors') + getVal('furniture') + getVal('ot_setup') + getVal('equip_cost');
+      const upfrontCash = Math.min(totalCapexNeeded, getVal('upfront_cash'));
+      const loanPrincipal = Math.max(0, totalCapexNeeded - upfrontCash);
+
+      const annualRate = parseFloat(document.getElementById('loan_rate_num').value) || 0;
+      const tenureMonths = parseFloat(document.getElementById('loan_tenure_num').value) || 1;
+      const monthlyRate = (annualRate / 12) / 100;
+
+      let emi = 0;
+      if (loanPrincipal > 0) {
+        if (monthlyRate > 0) {
+          emi = loanPrincipal * monthlyRate * Math.pow(1 + monthlyRate, tenureMonths) / (Math.pow(1 + monthlyRate, tenureMonths) - 1);
+        } else {
+          emi = loanPrincipal / tenureMonths;
+        }
+      }
+
+      // Update Step 3 UI
+      document.getElementById('cap_total_needed').innerText = formatINR(totalCapexNeeded);
+      document.getElementById('out_loan_principal').innerText = formatINR(loanPrincipal);
+      document.getElementById('out_loan_emi').innerText = formatINR(emi) + ' / mo';
+      document.getElementById('pipe_emi_badge').innerText = `(${formatINR(emi)}/mo)`;
+
+      // 3. FIXED COSTS & DOCTORS' MONTHLY INCOME
+      const fixedOverheads = getVal('rent') + getVal('staff') + getVal('utilities') + getVal('marketing');
+      const numDocs = getVal('num_docs');
+      const perDocPay = getVal('per_doc_pay');
+      const totalDocsPay = numDocs * perDocPay;
+
+      document.getElementById('out_total_docs_pay').innerText = formatINR(totalDocsPay) + ' / mo';
+
+      const totalMonthlySurvivalCost = fixedOverheads + emi + totalDocsPay;
+      const netMonthlySurplus = netRevenueAvailable - totalMonthlySurvivalCost;
+
+      // Update Central Engine UI
+      document.getElementById('eng_gross_rev').innerText = formatINR(grossMonthlyRev);
+      document.getElementById('eng_consumables').innerText = '- ' + formatINR(totalCOGS);
+      document.getElementById('eng_net_rev').innerText = formatINR(netRevenueAvailable);
+
+      document.getElementById('eng_fixed').innerText = '- ' + formatINR(fixedOverheads);
+      document.getElementById('eng_emi').innerText = '- ' + formatINR(emi);
+      document.getElementById('eng_docs').innerText = '- ' + formatINR(totalDocsPay);
+      document.getElementById('eng_total_cost').innerText = formatINR(totalMonthlySurvivalCost);
+
+      // Break-Even OPD Footfall
+      const currentOpd = getVal('opd_vol');
+      if (currentOpd > 0 && netRevenueAvailable > 0) {
+        const netRevPerDailyPatient = netRevenueAvailable / currentOpd;
+        const beOpd = (totalMonthlySurvivalCost / netRevPerDailyPatient).toFixed(1);
+        document.getElementById('be_opd').innerText = `${beOpd} patients/day`;
+      } else {
+        document.getElementById('be_opd').innerText = '--';
+      }
+
+      // 4. VERDICT BOX (GREEN SMILEY vs RED ALERT)
+      const verdictBox = document.getElementById('verdict_box');
+      const verdictIcon = document.getElementById('verdict_icon');
+      const verdictAmount = document.getElementById('verdict_amount');
+      const verdictTitle = document.getElementById('verdict_title');
+      const verdictSub = document.getElementById('verdict_sub');
+
+      verdictAmount.innerText = formatINR(netMonthlySurplus) + ' / month';
+
+      if (netMonthlySurplus >= 0) {
+        verdictBox.className = 'max-w-3xl mx-auto rounded-2xl p-6 text-center transition-all duration-300 shadow-lg mb-4 border-2 bg-emerald-50 border-emerald-400 text-emerald-950';
+        verdictIcon.innerText = '😊🎉';
+        verdictAmount.className = 'text-3xl sm:text-4xl font-black my-1 text-emerald-700';
+        verdictTitle.innerText = '✅ YES! Clinic is Monthly Self-Sustaining & Profitable!';
+        verdictSub.innerText = `After paying all clinic bills, Loan EMI (${formatINR(emi)}), and ${numDocs} doctor(s) (${formatINR(totalDocsPay)}), the clinic generates ${formatINR(netMonthlySurplus)} in pure extra monthly profit!`;
+      } else {
+        verdictBox.className = 'max-w-3xl mx-auto rounded-2xl p-6 text-center transition-all duration-300 shadow-lg mb-4 border-2 bg-rose-50 border-rose-500 text-rose-950';
+        verdictIcon.innerText = '🚨😟';
+        verdictAmount.className = 'text-3xl sm:text-4xl font-black my-1 text-rose-600';
+        verdictTitle.innerText = '⚠️ RED ALERT: Clinic is Running at a Monthly Deficit!';
+        verdictSub.innerText = `You are short by ${formatINR(Math.abs(netMonthlySurplus))} per month. Try increasing monthly procedures/footfall, lowering upfront loan size, or adjusting doctor draw during initial months.`;
+      }
+
+      // 5. RECOVERY TANK
+      document.getElementById('rec_cash').innerText = formatINR(upfrontCash);
+      document.getElementById('rec_surplus').innerText = formatINR(netMonthlySurplus) + ' / mo';
+      const recMonthsEl = document.getElementById('rec_months');
+
+      if (upfrontCash === 0) {
+        recMonthsEl.innerText = '0 Months (100% Loan)';
+      } else if (netMonthlySurplus > 0) {
+        const months = (upfrontCash / netMonthlySurplus).toFixed(1);
+        recMonthsEl.innerText = `${months} Months`;
+      } else {
+        recMonthsEl.innerText = '∞ (In Loss)';
+      }
+    }
+
+    window.onload = function() {
+      checkModalOnLoad();
+      calculate();
+    };
+  </script>
+</body>
+</html>
